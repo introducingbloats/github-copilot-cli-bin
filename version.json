@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
-  "hash-linux-x64": "sha256-zw5WlZT9p9R2xlTjijS8lXcTSee215BdWSu02yTadEA=",
-  "hash-linux-arm64": "sha256-LrGFG1Af2s8OfPBnLJqW7HBLdUwxvFWYOgM+6qzrSv8="
+  "version": "1.0.4",
+  "hash-linux-x64": "sha256-xZkPmwKuakDB887hcCdBZF3uwQIhrl9ao4E6EOg4JnA=",
+  "hash-linux-arm64": "sha256-ssw8hqcPWkNsHTrYgkGZrE8ft5NU6rukOEidY60FOfk="
 }
