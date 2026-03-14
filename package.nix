@@ -3,6 +3,7 @@
   stdenv,
   fetchurl,
   makeWrapper,
+  installShellFiles,
   glibc,
 }:
 let
@@ -39,6 +40,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     makeWrapper
+    installShellFiles
   ];
 
   sourceRoot = ".";
@@ -57,6 +59,19 @@ stdenv.mkDerivation (finalAttrs: {
     install -m 755 copilot $out/lib/copilot
     makeWrapper $out/lib/copilot $out/bin/copilot \
       --prefix LD_LIBRARY_PATH : "${ldLibraryPath}"
+
+    # Generate and install shell completions
+    export LD_LIBRARY_PATH="${ldLibraryPath}"
+    if ./copilot completion bash > copilot.bash 2>/dev/null; then
+      installShellCompletion --bash --name copilot.bash copilot.bash
+    fi
+    if ./copilot completion zsh > _copilot 2>/dev/null; then
+      installShellCompletion --zsh --name _copilot _copilot
+    fi
+    if ./copilot completion fish > copilot.fish 2>/dev/null; then
+      installShellCompletion --fish --name copilot.fish copilot.fish
+    fi
+
     runHook postInstall
   '';
 
