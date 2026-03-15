@@ -24,10 +24,6 @@ writeShellApplication {
 
     CURRENT_VERSION=$(jq -r '.version' version.json)
     echo "Flake version: $CURRENT_VERSION"
-    if [ "$VERSION" = "$CURRENT_VERSION" ]; then
-      echo "Version matches current version.json, skipping update"
-      exit 0
-    fi
 
     echo "Fetching x86_64-linux tarball and calculating hash"
     X64_URL="https://github.com/github/copilot-cli/releases/download/v$VERSION/copilot-linux-x64.tar.gz"
@@ -40,6 +36,14 @@ writeShellApplication {
     ARM64_SHA256=$(nix-prefetch-url "$ARM64_URL")
     ARM64_HASH=$(nix-hash --to-sri --type sha256 "$ARM64_SHA256")
     echo "aarch64-linux hash: $ARM64_HASH"
+
+    CURRENT_X64_HASH=$(jq -r '."hash-linux-x64"' version.json)
+    CURRENT_ARM64_HASH=$(jq -r '."hash-linux-arm64"' version.json)
+
+    if [ "$VERSION" = "$CURRENT_VERSION" ] && [ "$X64_HASH" = "$CURRENT_X64_HASH" ] && [ "$ARM64_HASH" = "$CURRENT_ARM64_HASH" ]; then
+      echo "Version and hashes match current version.json, skipping update"
+      exit 0
+    fi
 
     jq --arg version "$VERSION" \
        --arg hash_linux_x64 "$X64_HASH" \
