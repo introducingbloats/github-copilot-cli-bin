@@ -2,8 +2,8 @@
   lib,
   stdenv,
   fetchurl,
-  makeWrapper,
   installShellFiles,
+  patchelf,
   glibc,
 }:
 let
@@ -28,7 +28,7 @@ let
     }
     .${stdenv.hostPlatform.system}
       or (throw "github-copilot-cli-bin: Unsupported platform: ${stdenv.hostPlatform.system}");
-  ldLibraryPath = lib.makeLibraryPath [
+  runtimeLibraryPath = lib.makeLibraryPath [
     stdenv.cc.cc.lib
     glibc
   ];
@@ -39,8 +39,8 @@ stdenv.mkDerivation (finalAttrs: {
   inherit (defaultArgs) src;
 
   nativeBuildInputs = [
-    makeWrapper
     installShellFiles
+    patchelf
   ];
 
   sourceRoot = ".";
@@ -48,27 +48,28 @@ stdenv.mkDerivation (finalAttrs: {
   dontBuild = true;
   dontConfigure = true;
   noDumpEnvVars = true;
-  dontPatchELF = true;
-  dontAutoPatchelf = true;
   dontStrip = true;
-  dontFixup = true;
 
   installPhase = ''
     runHook preInstall
     mkdir -p $out/bin $out/lib
     install -m 755 copilot $out/lib/copilot
-    makeWrapper $out/lib/copilot $out/bin/copilot \
-      --prefix LD_LIBRARY_PATH : "${ldLibraryPath}"
+
+    # Patch the generic Linux release to use Nix's dynamic linker and runtime libraries.
+    patchelf \
+      --set-interpreter "${stdenv.cc.bintools.dynamicLinker}" \
+      --set-rpath "${runtimeLibraryPath}" \
+      $out/lib/copilot
+    ln -s ../lib/copilot $out/bin/copilot
 
     # Generate and install shell completions
-    export LD_LIBRARY_PATH="${ldLibraryPath}"
-    if ./copilot completion bash > copilot.bash 2>/dev/null; then
+    if $out/bin/copilot completion bash > copilot.bash 2>/dev/null; then
       installShellCompletion --bash --name copilot.bash copilot.bash
     fi
-    if ./copilot completion zsh > _copilot 2>/dev/null; then
+    if $out/bin/copilot completion zsh > _copilot 2>/dev/null; then
       installShellCompletion --zsh --name _copilot _copilot
     fi
-    if ./copilot completion fish > copilot.fish 2>/dev/null; then
+    if $out/bin/copilot completion fish > copilot.fish 2>/dev/null; then
       installShellCompletion --fish --name copilot.fish copilot.fish
     fi
 
